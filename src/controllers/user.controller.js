@@ -26,15 +26,23 @@ const registerController = asyncHandler(async (req, res) => {
   }
 
   // 3. Handle file uploads
-  const avatarLocationPath = req.file?.avatar[0].path;
-  const coverImageLocationPath = req.file?.coverImage[0].path;
-  if (!avatarLocationPath) {
+  const avatarFile = req.files?.avatar[0].path;
+  // const coverFile = req.files?.coverImage[0].path;
+  let coverFile;
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverFile = req.files.coverImage[0].path;
+  }
+  if (!avatarFile) {
     throw new ApiError(400, "Avatar file is required");
   }
-  const avatar = await uploadOnCloudinary(avatarLocationPath);
-  const coverImage = await uploadOnCloudinary(coverImageLocationPath);
+  const avatar = await uploadOnCloudinary(avatarFile);
+  const coverImage = coverFile ? await uploadOnCloudinary(coverFile) : null;
   if (!avatar) {
-    throw new ApiError(400, "Avartar file is required");
+    throw new ApiError(400, "Failed to upload Avatar");
   }
 
   // 4. Create user
