@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  list,
   loginUser,
   logOutUser,
   registerController,
@@ -18,6 +19,7 @@ router
     registerController
   )
   .post("/login", loginUser)
-  .post("/logout", verifyJWT, logOutUser);
+  .post("/logout", verifyJWT, logOutUser)
+  .get("/list", list);
 
 export default router;

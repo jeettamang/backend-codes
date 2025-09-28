@@ -170,10 +170,74 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, {}, "Password changed successfully"));
 });
 //Get cuurent user
-const currentUser = asyncHandler(async (req, res) => {
-  return res
-    .status(200)
-    .json(new ApiResponse(201, req.user, "Current user fethed successfully"));
+// const currentUser = asyncHandler(async (req, res) => {
+//   return res
+//     .status(200)
+//     .json(new ApiResponse(201, req.user, "Current user fethed successfully"));
+// });
+const list = asyncHandler(async (req, res) => {
+  const { username, role, page = 1, limit = 10 } = req.query;
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const query = [];
+  if (username) {
+    const safeUserName = username.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    query.push({
+      $match: {
+        username: new RegExp(safeUserName, "i"),
+      },
+    });
+  }
+  if (role) {
+    const safeUserRole = role.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    query.push({
+      $match: {
+        role: new RegExp(safeUserRole, "i"),
+      },
+    });
+  }
+  query.push({
+    $facet: {
+      metadata: [
+        {
+          $count: "total",
+        },
+      ],
+      data: [
+        {
+          $skip: (pageNum - 1) * limitNum,
+        },
+        {
+          $limit: limitNum,
+        },
+        {
+          $project: { password: 0, refreshToken: 0 },
+        },
+      ],
+    },
+  });
+  query.push({
+    $addFields: {
+      total: {
+        $arrayElemAt: ["$metadata.total", 0],
+      },
+    },
+  });
+
+  const result = await User.aggregate(query);
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        users: result[0].data,
+        total: result[0].total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(result[0].total / limitNum),
+      },
+      "Users fetched successfully"
+    )
+  );
 });
 //Update account
 const updateUser = asyncHandler(async (req, res) => {
@@ -197,6 +261,7 @@ export {
   loginUser,
   logOutUser,
   changeCurrentPassword,
-  currentUser,
+  // currentUser,
+  list,
   updateUser,
 };
