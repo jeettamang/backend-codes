@@ -1,7 +1,18 @@
 import express from "express";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { createBlog, list } from "../controllers/blog.controller.js";
+import {
+  createBlog,
+  getBySlug,
+  list,
+  updateBySlug,
+  updateByStatus,
+} from "../controllers/blog.controller.js";
 const router = express.Router();
 
-router.post("/create", verifyJWT, createBlog).get("/list", list);
+router
+  .post("/create", verifyJWT, createBlog)
+  .get("/list", list)
+  .get("/getBySlug/:slug", getBySlug)
+  .put("/update-by-slug/:slug", updateBySlug)
+  .patch("/status-slug/:slug", updateByStatus);
 export default router;

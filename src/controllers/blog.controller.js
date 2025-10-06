@@ -102,5 +102,79 @@ const list = async (req, res) => {
     return res.status(500).json({ error: "Something went wrong" });
   }
 };
+const getBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    if (!slug) {
+      return res.status(400).json({
+        message: "Slug not found",
+      });
+    }
+    const blog = await Blog.findOne({ slug }).populate(
+      "author",
+      "username email"
+    );
+    if (!blog) {
+      return res.status(404).json({
+        message: "Blog not found",
+      });
+    }
+    res.status(200).json({ message: "Blog fetched successfully", data: blog });
+  } catch (error) {
+    console.error("Failed to get blog");
+    res.status(500).json({ message: "Error is getBySlug API", error });
+  }
+};
+const updateBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { title, ...rest } = req.body;
+    if (!slug) {
+      return res.status(400).json({ message: "Slug is required" });
+    }
+    const updatedData = { ...rest };
+    if (title) {
+      updatedData.title = title;
+      updatedData.slug = generateSlug(title);
+    }
+    const blog = await Blog.findOneAndUpdate(
+      { slug },
+      { $set: updatedData },
+      { new: true }
+    );
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" });
+    }
+    res
+      .status(200)
+      .json({ message: "Blog updated successfully", data: updatedData });
+  } catch (error) {
+    console.error("Failed to update Blog");
+    res.status(500).json({ message: "Error in update By slug API", error });
+  }
+};
+const updateByStatus = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { status } = req.body;
 
-export { createBlog, list };
+    if (!["draft", "published"].includes(status)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid status or use 'draft or published only'" });
+    }
+    const blog = await Blog.findOneAndUpdate(
+      { slug },
+      { $set: { status: status } },
+      { new: true }
+    );
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" });
+    }
+    res.status(200).json({ message: "Blog status updated successfully" });
+  } catch (error) {
+    console.error("Failed to update Blog");
+    res.status(500).json({ message: "Error in update By slug API", error });
+  }
+};
+export { createBlog, list, getBySlug, updateBySlug, updateByStatus };
