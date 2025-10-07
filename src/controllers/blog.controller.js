@@ -1,4 +1,6 @@
 import { Blog } from "../models/blog.model.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { generateSlug } from "../utils/slug.js";
 
 const createBlog = async (req, res) => {
@@ -177,4 +179,31 @@ const updateByStatus = async (req, res) => {
     res.status(500).json({ message: "Error in update By slug API", error });
   }
 };
-export { createBlog, list, getBySlug, updateBySlug, updateByStatus };
+const removeBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    if (!slug) {
+      throw new ApiError(400, "Slug is required");
+    }
+    const blog = await Blog.findOneAndDelete({ slug });
+    if (!blog) {
+      throw new ApiError(404, "Blog not found");
+    }
+    res.status(200).json(new ApiResponse(200, {}, "Blog deleted successfully"));
+  } catch (error) {
+    console.error("Failed to update Blog");
+    res
+      .status(error.statusCode || 500)
+      .json(
+        new ApiResponse(500, null, error.message || "Internal Server Error")
+      );
+  }
+};
+export {
+  createBlog,
+  list,
+  getBySlug,
+  updateBySlug,
+  updateByStatus,
+  removeBySlug,
+};
